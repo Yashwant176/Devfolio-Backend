@@ -75,7 +75,4 @@ Set the following environment variables in **Render** or your deployment environ
 4. Add environment variables as listed above.
 5. Deploy the service.
 
-## License
 
-This project is open-source and available under the MIT License.
-"@
