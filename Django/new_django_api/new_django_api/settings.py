@@ -1,17 +1,19 @@
 from pathlib import Path
 from datetime import timedelta
 import os
-from corsheaders.defaults import default_headers, default_methods  # 👈 import this
+from corsheaders.defaults import default_headers, default_methods
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "replace-this-with-your-secret-key")
+
+# For production on Render
 DEBUG = False
 ALLOWED_HOSTS = ["devfolio-backend-xlbz.onrender.com"]
 
 # Apps
 INSTALLED_APPS = [
-    "corsheaders",
+    "corsheaders",  # keep at the top
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -24,7 +26,7 @@ INSTALLED_APPS = [
 
 # Middleware
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # must be first
+    "corsheaders.middleware.CorsMiddleware",  # must be very first
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -36,6 +38,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "new_django_api.urls"
 
+# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -53,7 +56,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "new_django_api.wsgi.application"
 
-# Database
+# Database (Render defaults to SQLite unless you add PostgreSQL)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -93,11 +96,14 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30)
 }
 
-# ✅ CORS FIX
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
-    "https://devfolio-frontend-z9so.onrender.com",
-]
+# ✅ CORS
+# 👉 Step 1: test with True to confirm backend/frontend communication
+CORS_ALLOW_ALL_ORIGINS = True  
+
+# 👉 Later, replace with just your frontend once confirmed working:
+# CORS_ALLOWED_ORIGINS = [
+#     "https://devfolio-frontend-z9so.onrender.com",
+# ]
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "content-disposition",

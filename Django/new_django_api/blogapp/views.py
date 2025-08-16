@@ -51,17 +51,21 @@ def update_user_profile(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Create blog
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_blog(request):
     user = request.user
     serializer = BlogSerializer(data=request.data, context={'request': request})
+
     if not serializer.is_valid():
-        print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    serializer.save(author=user)
-    return Response(serializer.data)
+
+    try:
+        blog = serializer.save(author=user)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(BlogSerializer(blog).data, status=status.HTTP_201_CREATED)
 
 
 # Update blog
