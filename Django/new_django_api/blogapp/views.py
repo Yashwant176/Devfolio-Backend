@@ -1,25 +1,19 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render
+from .models import Blog
 from django.contrib.auth import get_user_model
+from .serializers import SimpleAuthorSerializer, UpdateUserProfileSerializer, UserInfoSerializer, UserRegistrationSerializer, BlogSerializer
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 
-from .models import Blog
-from .serializers import (
-    UpdateUserProfileSerializer,
-    UserRegistrationSerializer,
-    BlogSerializer,
-    userInfoSerializer
-)
 
-# Pagination class
 class BlogListPagination(PageNumberPagination):
-    page_size = 3
+    page_size= 3
 
 
-# Blog list with pagination
+# Create your views here.
 @api_view(["GET"])
 def blog_list(request):
     blogs = Blog.objects.all()
@@ -29,7 +23,20 @@ def blog_list(request):
     return paginator.get_paginated_response(serializer.data)
 
 
-# User registration
+# @api_view(['GET'])
+# def blog_list(request):
+#     blogs = Blog.objects.all()
+#     serializer = BlogSerializer(blogs, many=True)
+#     return Response(serializer.data)
+
+@api_view(['GET'])
+def get_blog(request, slug):
+    blog = Blog.objects.get(slug=slug)
+    serializer = BlogSerializer(blog)
+    return Response(serializer.data)
+
+
+
 @api_view(["POST"])
 def register_user(request):
     serializer = UserRegistrationSerializer(data=request.data)
@@ -39,100 +46,109 @@ def register_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Update user profile
-@api_view(["PUT"])
+
+
+@api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_user_profile(request):
     user = request.user
-    serializer = UpdateUserProfileSerializer(user, data=request.data, partial=True)
+    serializer = UpdateUserProfileSerializer(user, data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_blog(request):
     user = request.user
-    serializer = BlogSerializer(data=request.data, context={'request': request})
+    serializer = BlogSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(author=user)
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        blog = serializer.save(author=user)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return Response(BlogSerializer(blog).data, status=status.HTTP_201_CREATED)
+# @api_view(["POST"])
+# def create_blog(request):
+#     serializer = BlogSerializer(data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Update blog
+
+
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_blog(request, pk):
     user = request.user
-    blog = get_object_or_404(Blog, id=pk)
-
+    blog = Blog.objects.get(id=pk)
     if blog.author != user:
-        return Response({"error": "You have to be the author of this blog"}, status=status.HTTP_403_FORBIDDEN)
-
-    data = request.data.copy()
-
-    # Preserve old featured_image if no new file is uploaded
-    if not request.FILES.get("featured_image") and blog.featured_image:
-        data["featured_image"] = blog.featured_image
-
-    serializer = BlogSerializer(blog, data=data, partial=True, context={'request': request})
+        return Response({"error": "You are not the author of this blog"}, status=status.HTTP_403_FORBIDDEN)
+    serializer = BlogSerializer(blog, data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
-
-    print("Serializer errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(["PUT"])
+# def update_blog(request, pk):
+#     blog = Blog.objects.get(id=pk)
+#     serializer = BlogSerializer(blog, data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete blog
-@api_view(["DELETE"])
+
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def delete_blog(request, pk):
-    blog = get_object_or_404(Blog, id=pk)
-    user = request.user
+    blog = Blog.objects.get(id=pk)
+    user = request.user 
     if blog.author != user:
-        return Response({"error": "You have to be the author of this blog"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "You are not the author of this blog"}, status=status.HTTP_403_FORBIDDEN)
     blog.delete()
-    return Response({"message": "Blog Deleted Successfully"}, status=status.HTTP_200_OK)
+    return Response({"message": "Blog deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
-# Get single blog
+
 @api_view(["GET"])
-def get_blog(request, slug):
-    blog = get_object_or_404(Blog, slug=slug)
-    serializer = BlogSerializer(blog)
-    return Response(serializer.data)
-
-
-# Get current user's username (public)
-@api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_username(request):
-    if request.user.is_authenticated:
-        username = request.user.username
-        return Response({"username": username})
-    return Response({"username": None})
+    user = request.user
+    username = user.username
+    return Response({"username": username})
 
 
-# Get user info by username (public)
-@api_view(["GET"])
-@permission_classes([AllowAny])
+@api_view(['GET'])
 def get_userinfo(request, username):
     User = get_user_model()
-    try:
-        user = User.objects.get(username=username)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Exclude invalid fields like 'job_title'
-    serializer = userInfoSerializer(user)
+    user = User.objects.get(username=username)
+    serializer = UserInfoSerializer(user)
     return Response(serializer.data)
+
+
+@api_view(["GET"])
+def get_user(request, email):
+    User = get_user_model()
+    try:
+        existing_user = User.objects.get(email=email)
+        serializer = SimpleAuthorSerializer(existing_user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+
+
+
+# Facebook: https://www.facebook.com/sampleusername
+# Instagram: https://www.instagram.com/sampleusername
+# YouTube: https://www.youtube.com/user/sampleusername
+# Twitter (now X): https://twitter.com/sampleusername
