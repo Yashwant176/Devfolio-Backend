@@ -1,15 +1,15 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+from corsheaders.defaults import default_headers, default_methods  # 👈 import this
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "replace-this-with-your-secret-key")
-DEBUG = False  # Must be False in production
+DEBUG = False
 ALLOWED_HOSTS = ["devfolio-backend-xlbz.onrender.com"]
 
-# Applications
+# Apps
 INSTALLED_APPS = [
     "corsheaders",
     "django.contrib.admin",
@@ -24,7 +24,7 @@ INSTALLED_APPS = [
 
 # Middleware
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # Must be first
+    "corsheaders.middleware.CorsMiddleware",  # must be first
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -61,7 +61,7 @@ DATABASES = {
     }
 }
 
-# Password validation
+# Auth
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -69,25 +69,21 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# Static and media files
+# Static + Media
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = "/IMG/"
 MEDIA_ROOT = BASE_DIR / "IMG"
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Custom user model
 AUTH_USER_MODEL = "blogapp.CustomUser"
 
-# REST framework + JWT
+# REST framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -97,10 +93,27 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30)
 }
 
-# CORS
+# ✅ CORS FIX
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://devfolio-frontend-z9so.onrender.com",
 ]
 
-# Optional for testing only (allows all origins)
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "content-disposition",
+    "accept-encoding",
+    "content-type",
+    "accept",
+    "origin",
+    "authorization",
+    "x-csrftoken",
+]
+
+CORS_ALLOW_METHODS = list(default_methods) + [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
