@@ -147,6 +147,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://localhost:3000",
     "https://devfolio-frontend-z9so.onrender.com",  # your frontend Render URL
 ]
