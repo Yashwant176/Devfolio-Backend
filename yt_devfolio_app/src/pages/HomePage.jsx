@@ -16,12 +16,7 @@ const HomePage = () => {
   });
 
   const blogs = data?.results || [];
-  const numOfPages = data?.count
-    ? Math.ceil(data.count / numOfBlogsPerPage)
-    : 1;
-
-  // Debug log to verify API shape
-  console.log({ count: data?.count, blogs });
+  const numOfPages = Math.ceil(data?.count / numOfBlogsPerPage);
 
   function handleSetPage(val) {
     setPage(val);
@@ -39,15 +34,13 @@ const HomePage = () => {
     <>
       <Header />
       <BlogContainer isPending={isPending} blogs={blogs} />
-      {numOfPages > 1 && (
-        <PagePagination
-          increasePageValue={increasePageValue}
-          decreasePageValue={decreasePageValue}
-          page={page}
-          numOfPages={numOfPages}
-          handleSetPage={handleSetPage}
-        />
-      )}
+      <PagePagination
+        increasePageValue={increasePageValue}
+        decreasePageValue={decreasePageValue}
+        page={page}
+        numOfPages={numOfPages}
+        handleSetPage={handleSetPage}
+      />
     </>
   );
 };
